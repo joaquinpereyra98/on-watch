@@ -1,0 +1,145 @@
+.theme-light .on-watch {
+    --color-duration-text: var(--color-text-dark-primary);
+    --color-turn-border: var(--color-border-dark-secondary);
+}
+
+.theme-dark .on-watch {
+    --color-duration-text: var(--dnd5e-color-gold);
+    --color-turn-border: var(--color-border-dark-secondary);
+}
+
+.on-watch.application .window-content {
+    padding: 0.5rem;
+}
+
+.on-watch .footer-tracker {
+    display: flex;
+    justify-content: end;
+    padding: 0.2rem 0;
+}
+
+.on-watch .footer-tracker button {
+    height: 24px;
+    padding: 0;
+    line-height: 24px;
+    font-size: var(--font-size-14);
+}
+
+.on-watch .turns-list {
+    --scroll-margin: 0.5rem;
+    flex: 1;
+    margin: 0;
+    margin-bottom: 0.2rem;
+    padding: 0;
+}
+
+.on-watch .turns-list .turn:hover {
+    border-color: var(--color-turn-border);
+}
+
+.on-watch .turns-list .turn {
+    gap: 0.25rem;
+    padding: 0.20rem 0.1rem;
+    border-top: 2px groove transparent;
+    border-bottom: 2px groove transparent;
+}
+
+
+.on-watch .turns-list .turn .time-container {
+    flex: 0;
+    font-family: var(--dnd5e-font-modesto);
+    color: var(--color-duration-text);
+    display: flex;
+    align-items: baseline;
+    margin: 0 0.1rem;
+}
+
+.on-watch .turns-list .turn .time-container .duration-input {
+    font-size: 2.5rem;
+    height: 2.5rem;
+    width: 2ch;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font-family: inherit;
+    text-align: right;
+}
+
+.on-watch .turns-list .turn .time-container .number-span {
+    font-size: 2.5rem;
+}
+
+.on-watch .turns-list .turn .time-container .unit-span {
+    font-size: 1.2rem;
+}
+
+.on-watch .turns-list .turn button.icon {
+    flex: 0 0 24px;
+    height: 24px;
+    padding: 0;
+    font-size: var(--font-size-14);
+    line-height: 24px;
+}
+
+.on-watch .turns-list .turn .members-container {
+    display: flex;
+}
+
+.on-watch .turns-list .turn .members-container .member {
+    display: flex;
+    margin: 0.2em;
+    position: relative;
+}
+
+.on-watch .turns-list .turn .members-container .member .member-img {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 50%;
+    border: 1px solid black;
+    transition: 500ms;
+}
+
+.on-watch .turns-list .turn .members-container .member:hover .member-img {
+    transform: scale(1.1);
+}
+
+.on-watch .turns-list .turn .members-container .member a {
+    --fa-primary-color: rgb(192, 0, 0);
+    --fa-secondary-color: #1b1b1b;
+    --fa-secondary-opacity: 1;
+    position: absolute;
+    left: 2rem;
+    opacity: 0;
+    transition: 200ms;
+}
+.on-watch .turns-list .turn .members-container .member:hover a {
+    opacity: 1;
+}
+
+.on-watch .turns-list .turn .members-container .member:hover a:hover {
+    transform: scale(1.1);
+}
+
+.on-watch .turns-list .turn .arrows-container {
+    display: flex;
+    flex-direction: column;
+    flex: 0;
+}
+
+.on-watch .turns-list .turn .arrows-container .arrow-icon {
+    transition: 200ms;
+    opacity: 0;
+    font-size: 1rem;
+}
+
+.on-watch .turns-list .turn:hover .arrows-container .arrow-icon {
+    opacity: 0.5;
+}
+.on-watch .turns-list .turn:hover .arrows-container .arrow-icon[disabled] {
+    opacity: 0;
+}
+.on-watch .turns-list .turn:hover .arrows-container .arrow-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}

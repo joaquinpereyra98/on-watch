@@ -6,11 +6,11 @@ Hooks.on("init", () => {
   const module = game.modules.get("on-watch");
   hooks.initSettings();
   module.classes = classes;
+  module.watchTracker = WatchTracker;
 });
 
 Hooks.on("ready", ()=> {
   const module = game.modules.get("on-watch");
-  module.watchTracker = new WatchTracker();
   module.watchManager = new module.classes.WatchManagerClass();
 })
 

@@ -36,5 +36,11 @@
     ],
     "styles": [
         "styles/on-watch.css"
-    ]
+    ],
+    "flags": {
+        "hotReload": {
+            "extensions": ["css", "hbs"],
+            "paths": ["styles", "templates/"]
+        }
+    }
 }
