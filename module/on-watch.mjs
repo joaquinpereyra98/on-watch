@@ -16,3 +16,5 @@ Hooks.on("ready", ()=> {
 
 Hooks.on("renderSceneControls", hooks.sceneControls);
 
+Hooks.on("controlToken", hooks.controlToken);
+Hooks.on("destroyToken", hooks.destroyToken);

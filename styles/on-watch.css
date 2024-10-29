@@ -44,20 +44,19 @@
     border-bottom: 2px groove transparent;
 }
 
-
 .on-watch .turns-list .turn .time-container {
     flex: 0;
     font-family: var(--dnd5e-font-modesto);
     color: var(--color-duration-text);
     display: flex;
     align-items: baseline;
-    margin: 0 0.1rem;
+    margin: 0;
 }
 
 .on-watch .turns-list .turn .time-container .duration-input {
     font-size: 2.5rem;
     height: 2.5rem;
-    width: 2ch;
+    width: 1.8ch;
     padding: 0;
     background: transparent;
     border: 0;
@@ -113,6 +112,7 @@
     opacity: 0;
     transition: 200ms;
 }
+
 .on-watch .turns-list .turn .members-container .member:hover a {
     opacity: 1;
 }
@@ -136,9 +136,11 @@
 .on-watch .turns-list .turn:hover .arrows-container .arrow-icon {
     opacity: 0.5;
 }
+
 .on-watch .turns-list .turn:hover .arrows-container .arrow-icon[disabled] {
     opacity: 0;
 }
+
 .on-watch .turns-list .turn:hover .arrows-container .arrow-icon:hover {
     opacity: 1;
     transform: scale(1.1);

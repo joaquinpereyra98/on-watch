@@ -67,8 +67,11 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
 
   /** @inheritDoc */
   async _prepareContext(options) {
+    const canvasActive = !!canvas.scene;
+    const hasControlled = canvas.tokens.controlled.length > 0;
+
     return {
-      canvasActive: !!canvas.scene,
+      hasToken: canvasActive && hasControlled,
       turns: this._prepareTurns(),
       lastTurn: this.doc.turns.length - 1,
       isGM: game.user.isGM,
@@ -98,11 +101,11 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
    * @private
    */
   async #handleDurationChange(e) {
+    const input = e.currentTarget;
     const index = Number(input.closest(".turn[data-index]").dataset.index);
     const newDuration = e.currentTarget.valueAsNumber;
 
     await this.doc.changeTurnDuration(index, newDuration, false);
-
   }
 
   /* -------------------------------------------- */

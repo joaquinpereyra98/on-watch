@@ -26,7 +26,7 @@
                 </div>
                 {{/each}}
             </div>
-            {{#if @root.canvasActive}}
+            {{#if @root.hasToken}}
             <button class="icon fa-solid fa-user-plus" data-tooltip="Add Token" data-action="addToken"></button>
             {{/if}}
             {{#if @root.isGM}}
