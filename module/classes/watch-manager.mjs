@@ -1,3 +1,4 @@
+import { fromUuid } from "../../foundry/resources/app/dist/core/utils.mjs";
 import WatchTracker from "../apps/watch-tracker.mjs";
 
 /**
@@ -24,13 +25,32 @@ export default class WatchManager {
     /**
      * @type {Turn[]}
      */
-    this.turns = this._initTurns();
+    this.turns = [];
 
     /**
      * @type {Watch}
      */
+    this.watch = null;
+
+    this.isActive = false;
+    this.#currentTurn = 0;
+
+    // Start asynchronous initialization
+    this._initialize();
+  }
+
+  /**
+   * Initializes async properties of the class.
+   * @returns {Promise<void>}
+   */
+  async _initialize() {
+    this.turns = await this._initTurns();
     this.watch = this._calcWatch();
     this.updateTurns(this.turns);
+
+    const watchSettings = game.settings.get("on-watch", "watch");
+    this.isActive = watchSettings?.watchActive ?? false;
+    this.#currentTurn = watchSettings?.currentTurn ?? 0;
   }
 
   #app;
@@ -41,22 +61,34 @@ export default class WatchManager {
     }
     return this.#app;
   }
+
+  #currentTurn;
+
+  get currentTurn() {
+    const lastTurn = Math.max(0, this.turns.length - 1);
+    if (this.#currentTurn < 0) this.#currentTurn = 0;
+    else if (this.#currentTurn > lastTurn) this.#currentTurn = lastTurn;
+    return this.#currentTurn;
+  }
+
   /**
-   * Initializes the turns from stored settings.
-   * Ensures that the result is always an array of valid Turn objects.
-   * @returns {Turn[]} Array of turn objects.
+   * Initializes the turns from stored settings, ensuring that each turn object is valid and sorted.
+   * @returns {Promise<Turn[]>} A promise that resolves to an array of sorted turn objects.
    */
-  _initTurns() {
+  async _initTurns() {
     let turns = game.settings.get("on-watch", "turns");
     if (!Array.isArray(turns)) turns = [];
 
-    return this._sortTurns(
-      turns.map((turn, index) => ({
+    // Map turns to promises, waiting for _validateMembers for each turn
+    const validatedTurns = await Promise.all(
+      turns.map(async (turn, index) => ({
         duration: typeof turn.duration === "number" ? turn.duration : 1,
-        members: this._validateMembers(turn.members),
+        members: await this._validateMembers(turn.members),
         sort: index,
       }))
     );
+
+    return this._sortTurns(validatedTurns);
   }
 
   /**
@@ -69,19 +101,20 @@ export default class WatchManager {
   }
 
   /**
-   * Validates the members of a turn, ensuring it is an array of valid UUID strings.
+   * Validates the members of a turn, ensuring they are valid UUIDs.
+   * Converts each UUID to an actor entity and adds it to the set if valid.
    * @param {any} members - The members of the turn.
-   * @returns {Set<string>} Array of valid member UUIDs.
+   * @returns {Promise<Set<string>>} A set of valid member UUIDs.
    */
-  _validateMembers(members) {
+  async _validateMembers(members) {
     if (!Array.isArray(members)) return new Set();
     const validMembers = new Set();
-    members.forEach((uuid) => {
+
+    for (const uuid of members) {
       if (typeof uuid === "string" && this._validateUuid(uuid)) {
-        const actor = fromUuidSync(uuid);
-        if (actor) validMembers.add(uuid);
+        validMembers.add(uuid);
       }
-    });
+    }
     return validMembers;
   }
 
@@ -92,6 +125,7 @@ export default class WatchManager {
    */
   _validateUuid(uuid) {
     const p = foundry.utils.parseUuid(uuid);
+
     return (
       p.type === "Actor" && foundry.data.validators.isValidId(p.documentId)
     );
@@ -110,11 +144,59 @@ export default class WatchManager {
   }
 
   /**
+   * Start a new Watch
+   * @returns
+   */
+  startWatch() {
+    if (this.isActive) return;
+
+    this.isActive = true;
+    this.#currentTurn = 0;
+
+    game.settings.set("on-watch", "watch", {
+      watchActive: true,
+      currentTurn: 0,
+    });
+    this.app?.render();
+  }
+  /**
+   * End the Watch
+   * @returns
+   */
+  endWatch() {
+    if (!this.isActive) return;
+    this.isActive = false;
+    this.#currentTurn = undefined;
+    game.settings.set("on-watch", "watch", {
+      watchActive: false,
+      currentTurn: undefined,
+    });
+
+    this.updateTurns([]);
+  }
+
+  /**
+   * Set a new current turn on a started watch
+   * @param {number} sort - sort of the new current turn
+   */
+  updateCurrentTurn(sort) {
+    const turnIndex = this.turns.findIndex((turn) => turn.sort === sort);
+    if (!this.isActive || turnIndex === -1) return;
+
+    game.settings.set("on-watch", "watch", {
+      watchActive: true,
+      currentTurn: turnIndex,
+    });
+
+    this.#currentTurn = turnIndex;
+  }
+
+  /**
    * Updates the stored watches with a new array of turns.
    * @param {Turn[]} watches - Array of updated turn objects.
    * @param {boolean} [render=true] - render the App?
    */
-  async updateTurns(turns, render=true) {
+  async updateTurns(turns, render = true) {
     this.turns = this._sortTurns(turns);
     const setting = this.turns.map((t) => ({
       ...t,
@@ -122,7 +204,7 @@ export default class WatchManager {
     }));
     game.settings.set("on-watch", "turns", setting);
     this.watch = this._calcWatch();
-    if(render) await this.app?.render();
+    if (render) await this.app?.render();
   }
 
   /**
@@ -130,7 +212,7 @@ export default class WatchManager {
    */
   async createTurn() {
     const newTurn = {
-      duration: 0,
+      duration: 1,
       members: new Set(),
       sort: this.turns.length,
     };
@@ -183,9 +265,9 @@ export default class WatchManager {
    * Changes the duration of a specific turn.
    * @param {number} sort - The `sort` value of the turn to modify.
    * @param {number} newDuration - The new duration to set for the turn.
-   * @param {boolean} [render=true] 
+   * @param {boolean} [render=true]
    */
-  async changeTurnDuration(sort, newDuration, render=true) {
+  async changeTurnDuration(sort, newDuration, render = true) {
     const turn = this.turns.find((t) => t.sort === sort);
     if (turn && typeof newDuration === "number" && newDuration >= 1) {
       turn.duration = newDuration;
@@ -215,5 +297,44 @@ export default class WatchManager {
       turn.members.delete(uuid);
       await this.updateTurns(this.turns);
     }
+  }
+
+  static ROLL_ACTIONS = Object.freeze({
+    MULTIPLE: "MULTIPLE",
+    INDIVIDUAL: "INDIVIDUAL",
+  });
+
+  /**
+   * Opens a dialog to choose the type of roll to perform.
+   * @returns {Promise<string|boolean>} The selected roll action or `false` if the dialog was closed without selection.
+   */
+  async createRollDialog() {
+    const { DialogV2 } = foundry.applications.api;
+    const { MULTIPLE, INDIVIDUAL } = WatchManager.ROLL_ACTIONS;
+
+    const action = await DialogV2.wait({
+      rejectClose: false,
+      window: { title: "Choose Roll", icon: "fa-solid fa-dice-d20" },
+      buttons: [
+        {
+          label: "Multiple Rolls",
+          icon: "fa-solid fa-dice-d20",
+          action: MULTIPLE,
+        },
+        {
+          label: "Single Roll",
+          icon: "fa-regular fa-dice-d20",
+          action: INDIVIDUAL,
+        },
+      ],
+    });
+    return action ?? false;
+  }
+
+  async multipleRoll() {
+
+  }
+
+  async individualRoll() {
   }
 }

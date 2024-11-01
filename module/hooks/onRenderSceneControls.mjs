@@ -1,4 +1,4 @@
-/** 
+/**
  * A hook event that fires whenever an SceneControls is rendered.
  * @param {Application} application
  * @param {JQuery} html
@@ -14,6 +14,8 @@ export default function onRenderSceneControls(application, html, data) {
 
   html.on("click", ".scene-control.on-watch", () => {
     const module = game.modules.get("on-watch");
+    if (!module.watchManager) module.watchManager = new module.classes.WatchManagerClass();
     module.watchManager.app?.render(true);
   });
 }
+  

@@ -1,17 +1,20 @@
 <div class="watch-tracker">
+    {{#if isActive}}
     <ol class="turns-list flexcol scrollable">
         {{#each turns as |turn|}}
-        <li class="turn flexrow" data-index="{{turn.sort}}">
+        <li class="turn flexrow {{ifThen (eq turn.sort @root.currentTurn) "active" ""}}" data-index="{{turn.sort}}">
             <div class="arrows-container">
                 <a class="arrow-icon" data-action="swapTurn" data-direction="-1" {{disabled (eq turn.sort 0)}}>
                     <i class="fa-solid fa-arrow-up"></i>
                 </a>
-                <a class="arrow-icon" data-action="swapTurn" data-direction="+1" {{disabled (eq turn.sort @root.lastTurn)}}>
+                <a class="arrow-icon" data-action="swapTurn" data-direction="+1" {{disabled (eq turn.sort
+                    @root.lastTurn)}}>
                     <i class="fa-solid fa-arrow-down"></i>
                 </a>
             </div>
             <div class="time-container">
-                <input type="number" class="duration-input" min="1" max="99" value="{{turn.duration}}" {{disabled (not @root.isGM)}}>
+                <input type="number" class="duration-input" min="1" max="99" value="{{turn.duration}}" {{disabled (not
+                    @root.isGM)}}>
                 <span class="unit-span">
                     h
                 </span>
@@ -20,8 +23,7 @@
                 {{#each turn.members as |member|}}
                 <div class="member">
                     <img class="member-img" src="{{member.img}}" alt="{{member.name}}">
-                    <a data-action="deleteMember" data-member="{{member.uuid}}">
-                        <i class="fa-duotone fa-solid fa-circle-xmark"></i>
+                    <a class="fa-regular fa-circle-xmark" data-action="deleteMember" data-member="{{member.uuid}}">
                     </a>
                 </div>
                 {{/each}}
@@ -30,14 +32,31 @@
             <button class="icon fa-solid fa-user-plus" data-tooltip="Add Token" data-action="addToken"></button>
             {{/if}}
             {{#if @root.isGM}}
-                <button class="icon fa-solid fa-trash" data-tooltip="Delete Turn" data-action="delete"></button>
+            <button class="icon fa-solid fa-trash" data-tooltip="Delete Turn" data-action="delete"></button>
             {{/if}}
         </li>
         {{/each}}
     </ol>
     <div class="footer-tracker">
         {{#if isGM}}
-            <button class="icon fa-solid fa-plus" data-tooltip="Create Turn" data-action="create">Turn</button>
+        <a class="watch-control fa-solid fa-plus" data-tooltip="Create Turn" data-action="create"></a>
+        <div class="watch-actions">
+            <a class="watch-control fa-solid fa-arrow-left" data-tooltip="Previous Turn" data-action="previousTurn" {{disabled isPreviousTurnValid}}></a>
+            <a class="watch-control fa-regular fa-dice-d20" data-tooltip="Roll" data-action="roll" {{disabled (not isRollValid)}}></a>
+            <a class="watch-control fa-solid fa-arrow-right" data-tooltip="Next Turn" data-action="nextTurn" {{disabled isNextTurnValid}}></a>
+        </div>
+        <a class="watch-control" data-tooltip="End Watch" data-action="endWatch">
+            <i class="fa-solid fa-campground"></i>
+            <i class="fa-solid fa-circle-check"></i>
+        </a>
         {{/if}}
     </div>
+</div>
+{{else}}
+<button class="start-watch-btn" data-action="startWatch">
+    <i class="fa-solid fa-campground"></i>
+    Start Watch
+</button>
+{{/if}}
+
 </div>

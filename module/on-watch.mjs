@@ -9,11 +9,6 @@ Hooks.on("init", () => {
   module.watchTracker = WatchTracker;
 });
 
-Hooks.on("ready", ()=> {
-  const module = game.modules.get("on-watch");
-  module.watchManager = new module.classes.WatchManagerClass();
-})
-
 Hooks.on("renderSceneControls", hooks.sceneControls);
 
 Hooks.on("controlToken", hooks.controlToken);
