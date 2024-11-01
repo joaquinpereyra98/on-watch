@@ -1,4 +1,3 @@
-import { fromUuid } from "../../foundry/resources/app/dist/core/utils.mjs";
 import WatchTracker from "../apps/watch-tracker.mjs";
 
 /**
@@ -31,13 +30,14 @@ export default class WatchManager {
      * @type {Watch}
      */
     this.watch = null;
-
     this.isActive = false;
     this.#currentTurn = 0;
-
-    // Start asynchronous initialization
     this._initialize();
   }
+
+  /* -------------------------------------------- */
+  /*  Initialization Methods                      */
+  /* -------------------------------------------- */
 
   /**
    * Initializes async properties of the class.
@@ -51,24 +51,6 @@ export default class WatchManager {
     const watchSettings = game.settings.get("on-watch", "watch");
     this.isActive = watchSettings?.watchActive ?? false;
     this.#currentTurn = watchSettings?.currentTurn ?? 0;
-  }
-
-  #app;
-
-  get app() {
-    if (!this.#app) {
-      this.#app = new WatchTracker({ doc: this });
-    }
-    return this.#app;
-  }
-
-  #currentTurn;
-
-  get currentTurn() {
-    const lastTurn = Math.max(0, this.turns.length - 1);
-    if (this.#currentTurn < 0) this.#currentTurn = 0;
-    else if (this.#currentTurn > lastTurn) this.#currentTurn = lastTurn;
-    return this.#currentTurn;
   }
 
   /**
@@ -89,15 +71,6 @@ export default class WatchManager {
     );
 
     return this._sortTurns(validatedTurns);
-  }
-
-  /**
-   * Sorts turns by the `sort` property in ascending order.
-   * @param {Turn[]} turns - Array of turns to sort.
-   * @returns {Turn[]} Sorted array of turns.
-   */
-  _sortTurns(turns) {
-    return turns.sort((a, b) => a.sort - b.sort);
   }
 
   /**
@@ -131,48 +104,26 @@ export default class WatchManager {
     );
   }
 
-  /**
-   * Initializes the current watch based on turns.
-   * @returns {Watch} The current watch object.
-   */
-  _calcWatch() {
-    const totalDuration = this.turns.reduce(
-      (sum, turn) => sum + turn.duration,
-      0
-    );
-    return { duration: totalDuration, turns: this.turns };
+  /* -------------------------------------------- */
+  /*  Turn Management Methods                     */
+  /* -------------------------------------------- */
+
+  #currentTurn;
+
+  get currentTurn() {
+    const lastTurn = Math.max(0, this.turns.length - 1);
+    if (this.#currentTurn < 0) this.#currentTurn = 0;
+    else if (this.#currentTurn > lastTurn) this.#currentTurn = lastTurn;
+    return this.#currentTurn;
   }
 
   /**
-   * Start a new Watch
-   * @returns
+   * Sorts turns by the `sort` property in ascending order.
+   * @param {Turn[]} turns - Array of turns to sort.
+   * @returns {Turn[]} Sorted array of turns.
    */
-  startWatch() {
-    if (this.isActive) return;
-
-    this.isActive = true;
-    this.#currentTurn = 0;
-
-    game.settings.set("on-watch", "watch", {
-      watchActive: true,
-      currentTurn: 0,
-    });
-    this.app?.render();
-  }
-  /**
-   * End the Watch
-   * @returns
-   */
-  endWatch() {
-    if (!this.isActive) return;
-    this.isActive = false;
-    this.#currentTurn = undefined;
-    game.settings.set("on-watch", "watch", {
-      watchActive: false,
-      currentTurn: undefined,
-    });
-
-    this.updateTurns([]);
+  _sortTurns(turns) {
+    return turns.sort((a, b) => a.sort - b.sort);
   }
 
   /**
@@ -299,6 +250,59 @@ export default class WatchManager {
     }
   }
 
+  /* -------------------------------------------- */
+  /*  Watch Control Methods                       */
+  /* -------------------------------------------- */
+
+  /**
+   * Initializes the current watch based on turns.
+   * @returns {Watch} The current watch object.
+   */
+  _calcWatch() {
+    const totalDuration = this.turns.reduce(
+      (sum, turn) => sum + turn.duration,
+      0
+    );
+    return { duration: totalDuration, turns: this.turns };
+  }
+
+  /**
+   * Start a new Watch
+   * @returns
+   */
+  startWatch() {
+    if (this.isActive) return;
+
+    this.isActive = true;
+    this.#currentTurn = 0;
+
+    game.settings.set("on-watch", "watch", {
+      watchActive: true,
+      currentTurn: 0,
+    });
+    this.app?.render();
+  }
+
+  /**
+   * End the Watch
+   * @returns
+   */
+  endWatch() {
+    if (!this.isActive) return;
+    this.isActive = false;
+    this.#currentTurn = undefined;
+    game.settings.set("on-watch", "watch", {
+      watchActive: false,
+      currentTurn: undefined,
+    });
+
+    this.updateTurns([]);
+  }
+
+  /* -------------------------------------------- */
+  /*  Roll Methods                                */
+  /* -------------------------------------------- */
+  
   static ROLL_ACTIONS = Object.freeze({
     MULTIPLE: "MULTIPLE",
     INDIVIDUAL: "INDIVIDUAL",
@@ -331,10 +335,20 @@ export default class WatchManager {
     return action ?? false;
   }
 
-  async multipleRoll() {
+  async multipleRoll() {}
 
-  }
+  async individualRoll() {}
 
-  async individualRoll() {
+  /* -------------------------------------------- */
+  /*  Application Methods                         */
+  /* -------------------------------------------- */
+
+  #app;
+
+  get app() {
+    if (!this.#app) {
+      this.#app = new WatchTracker({ doc: this });
+    }
+    return this.#app;
   }
 }
