@@ -85,7 +85,8 @@ export default class WatchManager {
 
     for (const uuid of members) {
       if (typeof uuid === "string" && this._validateUuid(uuid)) {
-        validMembers.add(uuid);
+        const actor = await fromUuid(uuid);
+        if(actor) validMembers.add(uuid);
       }
     }
     return validMembers;
@@ -302,7 +303,7 @@ export default class WatchManager {
   /* -------------------------------------------- */
   /*  Roll Methods                                */
   /* -------------------------------------------- */
-  
+
   static ROLL_ACTIONS = Object.freeze({
     MULTIPLE: "MULTIPLE",
     INDIVIDUAL: "INDIVIDUAL",
