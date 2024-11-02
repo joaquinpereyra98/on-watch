@@ -1,3 +1,5 @@
+import WatchManager from "../classes/watch-manager.mjs";
+
 const { BooleanField, NumberField, SchemaField } = foundry.data.fields;
 export default function initSettings() {
   game.settings.register("on-watch", "turns", {
@@ -7,7 +9,8 @@ export default function initSettings() {
     scope: "world",
     requiresReload: false,
     type: Array,
-    default: []
+    default: [],
+    onChange: WatchManager.onTurnsChange,
   });
   game.settings.register("on-watch", "watch", {
     name: "Watch",
@@ -17,10 +20,11 @@ export default function initSettings() {
     requiresReload: false,
     type: new SchemaField({
       watchActive: new BooleanField(),
-      currentTurn: new NumberField()
+      currentTurn: new NumberField(),
     }),
     default: {
       watchActive: false,
-    }
+    },
+    onChange: WatchManager.onWatchChange,
   });
 }

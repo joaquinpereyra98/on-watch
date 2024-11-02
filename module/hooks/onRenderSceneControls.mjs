@@ -5,6 +5,9 @@
  * @param {Object} data
  */
 export default function onRenderSceneControls(application, html, data) {
+  const watchSettings = game.settings.get("on-watch", "watch");
+  const isActive = watchSettings?.watchActive ?? false;
+  if(!game.user.isGM && !isActive) return;
   const content = `
     <li class="scene-control on-watch" aria-label="On Track!" data-tooltip="On Watch!">
             <i class="fa-solid fa-campground"></i>
@@ -14,8 +17,7 @@ export default function onRenderSceneControls(application, html, data) {
 
   html.on("click", ".scene-control.on-watch", () => {
     const module = game.modules.get("on-watch");
-    if (!module.watchManager) module.watchManager = new module.classes.WatchManagerClass();
-    module.watchManager.app?.render(true);
+    module.watchManager?.app?.render(true);
   });
 }
   

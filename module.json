@@ -19,6 +19,7 @@
     "download": "#{DOWNLOAD}#",
     "manifest": "#{MANIFEST}#",
     "readme": "README.md",
+    "socket": true,
     "relationships": {
         "systems": [
             {

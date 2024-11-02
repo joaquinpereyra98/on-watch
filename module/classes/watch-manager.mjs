@@ -1,4 +1,5 @@
 import WatchTracker from "../apps/watch-tracker.mjs";
+import SocketManager from "./socket-manager.mjs";
 
 /**
  * Represents a single turn in a watch.
@@ -31,8 +32,39 @@ export default class WatchManager {
      */
     this.watch = null;
     this.isActive = false;
-    this.#currentTurn = 0;
+    this._currentTurn = 0;
+    /**
+     * @type {SocketManager}
+     */
+    this.socket = new SocketManager({doc: this});
     this._initialize();
+  }
+
+  /* -------------------------------------------- */
+  /*  Settings Methods                            */
+  /* -------------------------------------------- */
+
+  static async onTurnsChange() {
+    const {watchManager} = game.modules.get("on-watch");
+      if(!watchManager)return;
+      watchManager.turns = await watchManager._initTurns();
+      watchManager.watch = watchManager._calcWatch()
+      watchManager.app.render();
+  }
+
+  static async onWatchChange(watch) {
+    ui.controls.render()
+    const {watchManager} = game.modules.get("on-watch");
+      if(!watchManager)return;
+
+      watchManager.isActive = watch?.watchActive ?? false;
+      watchManager._currentTurn = watch?.currentTurn ?? 0;
+
+      if(!watchManager.isActive && !game.user.isGM) {
+        watchManager.app.close();
+      }
+
+      watchManager.app.render();
   }
 
   /* -------------------------------------------- */
@@ -50,7 +82,7 @@ export default class WatchManager {
 
     const watchSettings = game.settings.get("on-watch", "watch");
     this.isActive = watchSettings?.watchActive ?? false;
-    this.#currentTurn = watchSettings?.currentTurn ?? 0;
+    this._currentTurn = watchSettings?.currentTurn ?? 0;
   }
 
   /**
@@ -86,7 +118,7 @@ export default class WatchManager {
     for (const uuid of members) {
       if (typeof uuid === "string" && this._validateUuid(uuid)) {
         const actor = await fromUuid(uuid);
-        if(actor) validMembers.add(uuid);
+        if (actor) validMembers.add(uuid);
       }
     }
     return validMembers;
@@ -109,13 +141,13 @@ export default class WatchManager {
   /*  Turn Management Methods                     */
   /* -------------------------------------------- */
 
-  #currentTurn;
+  _currentTurn;
 
   get currentTurn() {
     const lastTurn = Math.max(0, this.turns.length - 1);
-    if (this.#currentTurn < 0) this.#currentTurn = 0;
-    else if (this.#currentTurn > lastTurn) this.#currentTurn = lastTurn;
-    return this.#currentTurn;
+    if (this._currentTurn < 0) this._currentTurn = 0;
+    else if (this._currentTurn > lastTurn) this._currentTurn = lastTurn;
+    return this._currentTurn;
   }
 
   /**
@@ -140,7 +172,7 @@ export default class WatchManager {
       currentTurn: turnIndex,
     });
 
-    this.#currentTurn = turnIndex;
+    this._currentTurn = turnIndex;
   }
 
   /**
@@ -149,13 +181,14 @@ export default class WatchManager {
    * @param {boolean} [render=true] - render the App?
    */
   async updateTurns(turns, render = true) {
-    this.turns = this._sortTurns(turns);
-    const setting = this.turns.map((t) => ({
+    turns = this._sortTurns(turns);
+    const setting = turns.map((t) => ({
       ...t,
       members: Array.from(t.members),
     }));
-    game.settings.set("on-watch", "turns", setting);
-    this.watch = this._calcWatch();
+    if(game.user.isGM) game.settings.set("on-watch", "turns", setting);
+    else this.socket.emitUpdateTurns(setting);
+
     if (render) await this.app?.render();
   }
 
@@ -275,13 +308,15 @@ export default class WatchManager {
     if (this.isActive) return;
 
     this.isActive = true;
-    this.#currentTurn = 0;
+    this._currentTurn = 0;
 
     game.settings.set("on-watch", "watch", {
       watchActive: true,
       currentTurn: 0,
     });
+
     this.app?.render();
+    this.socket.emitRenderTracker(true);
   }
 
   /**
@@ -291,7 +326,7 @@ export default class WatchManager {
   endWatch() {
     if (!this.isActive) return;
     this.isActive = false;
-    this.#currentTurn = undefined;
+    this._currentTurn = undefined;
     game.settings.set("on-watch", "watch", {
       watchActive: false,
       currentTurn: undefined,

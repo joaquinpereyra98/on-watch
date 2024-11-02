@@ -30,9 +30,9 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
       resizable: true,
       controls: [
         {
-          icon: "fa-solid fa-arrow-up-right-from-square",
-          label: "Popout!",
-          action: "popout",
+          icon: "fa-solid fa-eye",
+          label: "Show to Players!",
+          action: "showPlayer",
         },
       ],
     },
@@ -41,7 +41,7 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
       delete: WatchTracker.deleteTurn,
       swapTurn: WatchTracker.swapTurns,
       addToken: WatchTracker.addToken,
-      popout: WatchTracker.popout,
+      showPlayer: WatchTracker.showPlayer,
       deleteMember: WatchTracker.deleteMember,
       startWatch: WatchTracker.startWatch,
       endWatch: WatchTracker.endWatch,
@@ -62,6 +62,15 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
   /*  Instance Methods                            */
   /* -------------------------------------------- */
 
+  /** @inheritDoc */
+  _initializeApplicationOptions(options) {
+    options = super._initializeApplicationOptions(options);
+
+    const showPlayer = options.window?.controls?.find(c => c.action === 'showPlayer');
+    if(showPlayer) showPlayer.visible = game.user.isGM;
+
+    return options;
+  }
   /** @override */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
@@ -71,7 +80,6 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
         ui.controls?.element[0].getBoundingClientRect().top;
     }
   }
-
   /** @inheritDoc */
   async _prepareContext(options) {
     const { isActive, turns, currentTurn } = this.doc;
@@ -275,7 +283,11 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
    * @param {PointerEvent} event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defines the [data-action].
    */
-  static popout(event, target) {}
+  static showPlayer(event, target) {
+    event.preventDefault();
+    console.log("showPlayer");
+    this.doc.socket.emitRenderTracker(true)
+  }
 
   /**
    * Starts the watch, initializing or resetting any necessary values.
