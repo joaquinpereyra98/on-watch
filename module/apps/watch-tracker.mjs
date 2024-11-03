@@ -336,5 +336,7 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
    * @param {PointerEvent} event - The originating click event.
    * @param {HTMLElement} target - The HTML element that captured the event.
    */
-  static async roll(event, target) {}
+  static async roll(event, target) {
+    await this.doc.watchRoll();
+  }
 }

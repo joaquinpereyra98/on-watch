@@ -1,3 +1,4 @@
+import { fromUuid } from "../../foundry/resources/app/dist/core/utils.mjs";
 import WatchManager from "./watch-manager.mjs";
 
 /**
@@ -73,16 +74,16 @@ export default class SocketManager {
    * @param {boolean} [force=false] - Whether to force rendering the application.
    */
   emitRenderTracker(force = false) {
-    console.log("emitRenderTracker", force)
     this._emit("RENDER-TRACKER", { force });
   }
 
   /**
    * Emits an event to request a roll.
-   * @param {Object} payload - The data associated with the roll request.
+   * @param {Map} users - Map of user with the actors request it.
    */
-  emitRequestRoll(payload) {
-    this._emit("REQUEST-ROLL", payload);
+  emitRequestRoll(users) {
+    users = Object.fromEntries(users.entries());
+    this._emit("REQUEST-ROLL", {users});
   }
 
   /* -------------------------------------------- */
@@ -105,17 +106,24 @@ export default class SocketManager {
    * @private
    */
   _handleRenderTracker({ force }) {
-    console.log("_handleRenderTracker", force)
     const module = game.modules.get("on-watch");
     module.watchManager?.app?.render(force);
   }
 
   /**
    * Handles a roll request from a received socket event.
-   * @param {Object} payload - The data for the roll request.
+   * @param {Object} payload - Socket data.
+   * @param {Map} payload.users
    * @private
    */
-  _handleRequestRoll(payload) {
-    // Implement roll request logic here
+  async _handleRequestRoll({users}) {
+    if (Object.hasOwn(users, game.user.id)) {
+      const { actors, rollData } = users[game.user.id];
+      for (const uuid of actors) {
+        const actor = await fromUuid(uuid);
+        await actor.rollSkill("prc", rollData);
+      }
+    }
+    
   }
 }

@@ -36,7 +36,7 @@ export default class WatchManager {
     /**
      * @type {SocketManager}
      */
-    this.socket = new SocketManager({doc: this});
+    this.socket = new SocketManager({ doc: this });
     this._initialize();
   }
 
@@ -45,26 +45,26 @@ export default class WatchManager {
   /* -------------------------------------------- */
 
   static async onTurnsChange() {
-    const {watchManager} = game.modules.get("on-watch");
-      if(!watchManager)return;
-      watchManager.turns = await watchManager._initTurns();
-      watchManager.watch = watchManager._calcWatch()
-      watchManager.app.render();
+    const { watchManager } = game.modules.get("on-watch");
+    if (!watchManager) return;
+    watchManager.turns = await watchManager._initTurns();
+    watchManager.watch = watchManager._calcWatch();
+    watchManager.app.render();
   }
 
   static async onWatchChange(watch) {
-    ui.controls.render()
-    const {watchManager} = game.modules.get("on-watch");
-      if(!watchManager)return;
+    ui.controls.render();
+    const { watchManager } = game.modules.get("on-watch");
+    if (!watchManager) return;
 
-      watchManager.isActive = watch?.watchActive ?? false;
-      watchManager._currentTurn = watch?.currentTurn ?? 0;
+    watchManager.isActive = watch?.watchActive ?? false;
+    watchManager._currentTurn = watch?.currentTurn ?? 0;
 
-      if(!watchManager.isActive && !game.user.isGM) {
-        watchManager.app.close();
-      }
+    if (!watchManager.isActive && !game.user.isGM) {
+      watchManager.app.close();
+    }
 
-      watchManager.app.render();
+    watchManager.app.render();
   }
 
   /* -------------------------------------------- */
@@ -186,7 +186,7 @@ export default class WatchManager {
       ...t,
       members: Array.from(t.members),
     }));
-    if(game.user.isGM) game.settings.set("on-watch", "turns", setting);
+    if (game.user.isGM) game.settings.set("on-watch", "turns", setting);
     else this.socket.emitUpdateTurns(setting);
 
     if (render) await this.app?.render();
@@ -345,6 +345,22 @@ export default class WatchManager {
   });
 
   /**
+   * Perform perception rolls in current turn.
+   * @param {object} options
+   */
+  async watchRoll(options) {
+    const action = await this.createRollDialog();
+    if (!action) return;
+
+    switch (action) {
+      case WatchManager.ROLL_ACTIONS.INDIVIDUAL:
+        return await this.individualRoll();
+      case WatchManager.ROLL_ACTIONS.MULTIPLE:
+        return await this.multipleRoll();
+    }
+  }
+
+  /**
    * Opens a dialog to choose the type of roll to perform.
    * @returns {Promise<string|boolean>} The selected roll action or `false` if the dialog was closed without selection.
    */
@@ -357,10 +373,10 @@ export default class WatchManager {
       window: { title: "Choose Roll", icon: "fa-solid fa-dice-d20" },
       buttons: [
         {
-          label: "Multiple Rolls",
+          label: "Group Roll",
           icon: "fa-solid fa-dice-d20",
           action: MULTIPLE,
-        },
+        },  
         {
           label: "Single Roll",
           icon: "fa-regular fa-dice-d20",
@@ -368,13 +384,89 @@ export default class WatchManager {
         },
       ],
     });
+
     return action ?? false;
   }
 
-  async multipleRoll() {}
+  async multipleRoll() {
+    const { OWNER } = foundry.CONST.DOCUMENT_OWNERSHIP_LEVELS;
+    const turn = this.turns.find((t) => t.sort === this.currentTurn);
+    const members = await Promise.all(
+      Array.from(turn.members, async (uuid) => await fromUuid(uuid))
+    );
 
-  async individualRoll() {}
+    const socketData = new Map();
+    const actors = [];
 
+    for (const actor of members) {
+      let added = false;
+      for (const user of game.users.players.filter(u => u.active)) {
+        if (actor.getUserLevel(user) === OWNER) {
+          if (!socketData.has(user.id)) {
+            socketData.set(user.id, { actors: [], rollData: {} });
+          }
+          socketData.get(user.id).actors.push(actor.uuid);
+          added = true;
+          break;
+        }
+      }
+      if (!added) {
+        actors.push(actor);
+      }
+    }
+    this.socket.emitRequestRoll(socketData);
+    return actors.forEach(async (a) => await a.rollSkill("prc"));
+  }
+
+  async individualRoll() {
+    const { OWNER } = foundry.CONST.DOCUMENT_OWNERSHIP_LEVELS;
+    const turn = this.turns.find((t) => t.sort === this.currentTurn);
+    const actor = await this.createIndividualRollDialog(turn);
+    if (!actor) return;
+    const rollData = { advantage: turn.members.size >= 2 };
+
+    for (const user of game.users.players.filter(u => u.active)) {
+      if (actor.getUserLevel(user) === OWNER) {
+        const users = new Map([[user.id, { actors: [actor.uuid], rollData }]]);
+        return this.socket.emitRequestRoll(users);
+      }
+    }
+    return actor.rollSkill("prc", rollData);
+  }
+  /**
+   *
+   * @returns {Actor}
+   */
+  async createIndividualRollDialog(turn) {
+    const { DialogV2 } = foundry.applications.api;
+    const { StringField } = foundry.data.fields;
+
+    const members = await Promise.all(
+      Array.from(turn.members, async (uuid) => await fromUuid(uuid))
+    );
+    const choices = members.reduce((acc, { name, uuid }) => {
+      acc[uuid] = name;
+      return acc;
+    }, {});
+
+    const actorField = new StringField({
+      label: "Actor",
+      choices,
+      required: true,
+    }).toFormGroup({}, { name: "uuid" }).outerHTML;
+
+    const actorUuid = await DialogV2.prompt({
+      rejectClose: false,
+      window: { title: "Choose the Actor", icon: "fa-solid fa-dice-d20" },
+      content: actorField,
+      ok: {
+        label: "Roll!",
+        callback: (_, button) => new FormDataExtended(button.form).object.uuid,
+      },
+    });
+    const actor = members.find((a) => a.uuid === actorUuid);
+    return actor;
+  }
   /* -------------------------------------------- */
   /*  Application Methods                         */
   /* -------------------------------------------- */
