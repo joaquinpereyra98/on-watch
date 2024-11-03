@@ -94,7 +94,7 @@ jobs:
       - name: Build JS
         run: |
           npm run build --if-present
-          mv --force public/whq.mjs module/whq.mjs
+          mv --force public/on-watch.mjs module/on-watch.mjs
 
       # Create a "system.zip" archive containing all the system's required files.
       # If you have other directories or files that will need to be added to
