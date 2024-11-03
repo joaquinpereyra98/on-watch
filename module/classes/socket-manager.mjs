@@ -1,4 +1,3 @@
-import { fromUuid } from "../../foundry/resources/app/dist/core/utils.mjs";
 import WatchManager from "./watch-manager.mjs";
 
 /**
