@@ -108,12 +108,15 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
     return Promise.all(
       this.doc.turns.map(async (turn) => ({
         ...turn,
-        members: await Promise.all(
-          Array.from(turn.members, async (uuid) => await fromUuid(uuid))
-        ),
+        members: (
+          await Promise.all(
+            Array.from(turn.members, async (uuid) => await fromUuid(uuid))
+          )
+        ).filter((member) => member !== null),
       }))
     );
   }
+  
 
   /**
    * Check if the curent turn is avilitable for roll.

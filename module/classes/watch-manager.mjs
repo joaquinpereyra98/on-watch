@@ -53,7 +53,7 @@ export default class WatchManager {
   }
 
   static async onWatchChange(watch) {
-    ui.controls.render();
+    ui.players.render();
     const { watchManager } = game.modules.get("on-watch");
     if (!watchManager) return;
 

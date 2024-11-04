@@ -12,6 +12,18 @@
     --color-members-border: rgba(239, 230, 216);
 }
 
+#players .tracker-btn.on-watch {
+    opacity: 0.4;
+    transition: 200ms;
+    font-size: 1.23em;
+    cursor: pointer;
+}
+
+#players .tracker-btn.on-watch:hover {
+    opacity: 1;
+    font-size: 1.25em;
+}
+
 .on-watch.application .window-content {
     padding: 0.5rem;
 }

@@ -14,7 +14,13 @@ Hooks.on("ready", () => {
   if (!module.watchManager) module.watchManager = new module.classes.WatchManagerClass();
 })
 
-Hooks.on("renderSceneControls", hooks.sceneControls);
+Hooks.on("renderPlayerList", hooks.renderPlayerList);
 
 Hooks.on("controlToken", hooks.controlToken);
 Hooks.on("destroyToken", hooks.destroyToken);
+
+Hooks.on("deleteActor", () => {
+  const module = game.modules.get("on-watch");
+  const watchTracker = module?.watchManager?.app;
+  if (watchTracker?.rendered) watchTracker.render();
+});
