@@ -319,6 +319,8 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
    */
   static previousTurn(event, target) {
     event.preventDefault();
+    const { duration } = this.doc.turns[this.doc.currentTurn];
+    game.time.advance(duration * -3600);
     this.doc.updateCurrentTurn(this.doc.currentTurn - 1);
     this.render();
   }
@@ -330,6 +332,8 @@ export default class WatchTracker extends HandlebarsApplicationMixin(
    */
   static nextTurn(event, target) {
     event.preventDefault();
+    const { duration } = this.doc.turns[this.doc.currentTurn];
+    game.time.advance(duration * 3600);
     this.doc.updateCurrentTurn(this.doc.currentTurn + 1);
     this.render();
   }

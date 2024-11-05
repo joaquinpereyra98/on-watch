@@ -121,6 +121,7 @@ export default class SocketManager {
       for (const uuid of actors) {
         const actor = await fromUuid(uuid);
         await actor.rollSkill("prc", rollData);
+        await new Promise(r => setTimeout(r, 1));
       }
     }
     

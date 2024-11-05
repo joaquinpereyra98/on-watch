@@ -394,7 +394,6 @@ export default class WatchManager {
     const members = await Promise.all(
       Array.from(turn.members, async (uuid) => await fromUuid(uuid))
     );
-
     const socketData = new Map();
     const actors = [];
 
@@ -415,7 +414,11 @@ export default class WatchManager {
       }
     }
     this.socket.emitRequestRoll(socketData);
-    return actors.forEach(async (a) => await a.rollSkill("prc"));
+
+    for (const a of actors) {
+      await a.rollSkill("prc");
+      await new Promise(r => setTimeout(r, 1));
+    } 
   }
 
   async individualRoll() {
