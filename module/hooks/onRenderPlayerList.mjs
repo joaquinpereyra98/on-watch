@@ -4,7 +4,7 @@
  */
 export default function onRenderPlayerList(_, html) {
   const isActive = game.settings.get("on-watch", "watch")?.watchActive ?? false;
-  if (!game.user.isGM || !isActive) return;
+  if (!game.user.isGM && !isActive) return;
 
   const button = `
       <h3 class="tracker-btn on-watch" data-tooltip="On Watch!">
